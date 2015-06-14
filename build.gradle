@@ -1,0 +1,18 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.github.javaparser:javaparser-core:+'
+	compile 'com.google.code.gson:gson:+'
+}
+
+jar {
+ manifest {
+   attributes 'Main-Class': 'stats.Stats'
+ }
+ from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+}
