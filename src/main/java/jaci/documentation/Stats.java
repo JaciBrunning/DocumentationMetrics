@@ -9,9 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonWriter;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +27,7 @@ public class Stats {
         statsList = new HashMap<>();
         File root = new File(dir);
         runMetrics(root);
-        int count = 0, pub = 0, doc = 0, docpub = 0;
+        int count = 0, pub = 0, doc = 0, docpub = 0, lnCount = 0, locCount = 0;
         File fn = new File("stats");
         fn.mkdirs();
         JsonWriter writer = new JsonWriter(new FileWriter("stats/metrics.json"));
@@ -49,6 +47,8 @@ public class Stats {
             pub += st.getPublicMethodCount();
             doc += st.getTotalDocumented();
             docpub += st.getPublicDocumented();
+            lnCount += st.getLineCount();
+            locCount += st.getLOC();
             st.write(writer);
             writer.endObject();
         }
@@ -78,6 +78,12 @@ public class Stats {
         writer.name("file_count");
         writer.value(statsList.size());
 
+        writer.name("line_count");
+        writer.value(lnCount);
+
+        writer.name("loc_count");
+        writer.value(locCount);
+
         writer.endObject();
         writer.endObject();
         writer.close();
@@ -87,6 +93,9 @@ public class Stats {
         System.out.println("[stat] Documented Public Methods: " + docpub);
         System.out.println("[stat] Percentage Overall Documented: " + ((float)doc / count) * 100 + "%");
         System.out.println("[stat] Percentage Public Documented: " + ((float)docpub / pub) * 100 + "%");
+        System.out.println("[stat] File Count: " + statsList.size());
+        System.out.println("[stat] Line Count: " + lnCount);
+        System.out.println("[stat] Lines Of Code: " + locCount);
         System.out.println("[stat] Finished Statistics");
         System.out.println();
         System.out.println("[stat] Uploading Gist...");
@@ -106,6 +115,7 @@ public class Stats {
                 DocumentationMetrics metric = new DocumentationMetrics();
                 metric.unit = unit;
                 metric.visit(unit, f);
+                metric.lnCount(f);
             } catch (Exception e) {
             }
         }
@@ -113,6 +123,7 @@ public class Stats {
 
     public static class DocumentationMetrics extends VoidVisitorAdapter<File> {
         CompilationUnit unit;
+        FileStats stats;
         @Override
         public void visit(MethodDeclaration m, File file) {
             FileStats stats;
@@ -120,7 +131,28 @@ public class Stats {
                 stats = statsList.get(file);
             else stats = new FileStats(file);
             stats.addMethod(m);
+            this.stats = stats;
             statsList.put(file, stats);
+        }
+
+        public void lnCount(File file) throws IOException {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String ln;
+            while ((ln = reader.readLine()) != null) {
+                stats.incrementLine();
+                if (isLOC(ln.trim())) stats.incrementLOC();
+            }
+            reader.close();
+        }
+
+        boolean inComment = false;
+        boolean isLOC(String ln) {
+            if (ln.equals("")) return false;
+            if (ln.startsWith("//")) return false;
+            if (ln.startsWith("/*")) inComment = true;
+            if (ln.endsWith("*/")) inComment = false;
+            if (inComment) return false;
+            return true;
         }
     }
 

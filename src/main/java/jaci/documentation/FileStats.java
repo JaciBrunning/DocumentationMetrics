@@ -10,7 +10,7 @@ import java.lang.reflect.Modifier;
 public class FileStats {
 
     File f;
-    int methodCount, publicCount, documented, documentedPublic;
+    int methodCount, publicCount, documented, documentedPublic, lineCount = 0, locCount = 0;
 
     public FileStats(File file) {
         f = file;
@@ -60,6 +60,30 @@ public class FileStats {
         return f;
     }
 
+    public void incrementLine() {
+        lineCount++;
+    }
+
+    public void setLineCount(int ln) {
+        lineCount = ln;
+    }
+
+    public int getLineCount() {
+        return lineCount;
+    }
+
+    public void incrementLOC() {
+        locCount++;
+    }
+
+    public void setLOC(int ln) {
+        locCount = ln;
+    }
+
+    public int getLOC() {
+        return locCount;
+    }
+
     public void write(JsonWriter writer) throws IOException {
         writer.name("method_count");
         writer.value(getMethodCount());
@@ -78,6 +102,12 @@ public class FileStats {
 
         writer.name("percent_public_documented");
         writer.value(getPercentagePublic());
+
+        writer.name("line_count");
+        writer.value(lineCount);
+
+        writer.name("loc_count");
+        writer.value(locCount);
     }
 
 }
