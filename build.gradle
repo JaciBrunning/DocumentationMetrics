@@ -12,7 +12,7 @@ dependencies {
 
 jar {
  manifest {
-   attributes 'Main-Class': 'stats.Stats'
+   attributes 'Main-Class': 'jaci.documentation.Stats'
  }
  from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
 }
